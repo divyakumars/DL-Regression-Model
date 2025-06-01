@@ -1,4 +1,3 @@
-
 # Developing a Neural Network Regression Model
 
 ## AIM
@@ -45,146 +44,105 @@ Use the trained model to predict  for a new input value .
 
 ### Register Number: 212222230035
 
-```python
+```
+# Required Libraries
 import torch
-import torch.nn as nn  # Neural network module
+import torch.nn as nn
+import torch.optim as optim
+import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.pyplot as plt  # For plotting
-%matplotlib inline
 
-X = torch.linspace(1,70,70).reshape(-1,1)
+# Step 1: Generate Dataset
+torch.manual_seed(0)
+x = torch.arange(1, 51, dtype=torch.float32).view(-1, 1)
+noise = torch.randn(x.size()) * 5
+y = 2 * x + 1 + noise
 
-torch.manual_seed(71) # to obtain reproducible results
-e = torch.randint(-8,9,(70,1),dtype=torch.float)
-#print(e.sum())
-
-y = 2*X + 1 + e
-print(y.shape)
-```
-
-
-
-```
-plt.scatter(X.numpy(), y.numpy(),color='red')  # Scatter plot of data points
-plt.xlabel('x')
-plt.ylabel('y')
-plt.title('Generated Data for Linear Regression')
-plt.show()
-```
-
-
-```
-# Setting a manual seed for reproducibility
-torch.manual_seed(59)
-
-# Defining the model class
+# Step 2: Define Model
 class Model(nn.Module):
     def __init__(self, in_features, out_features):
         super().__init__()
         self.linear = nn.Linear(in_features, out_features)
-        
+
     def forward(self, x):
-        y_pred = self.linear(x)
-        return y_pred
+        return self.linear(x)
 
-# Creating an instance of the model
-torch.manual_seed(59)
 model = Model(1, 1)
-print('Weight:', model.linear.weight.item())
-print('Bias:  ', model.linear.bias.item())
-```
 
+# Step 3: Loss & Optimizer
+criterion = nn.MSELoss()
+optimizer = optim.SGD(model.parameters(), lr=0.001)
 
-```
-loss_function = nn.MSELoss()  # Mean Squared Error (MSE) loss
+# Step 4: Train the Model
+loss_values = []
+epochs = 100
 
-optimizer = torch.optim.SGD(model.parameters(), lr=0.0001)  # Stochastic Gradient Descent
-
-epochs = 50  # Number of training iterations
-losses = []  # List to store loss values
-
-for epoch in range(1, epochs + 1):  # Start from 1 to 50
-    optimizer.zero_grad()  # Clear previous gradients
-    y_pred = model(X)  # Forward pass
-    loss = loss_function(y_pred, y)  # Compute loss
-    losses.append(loss.item())  # Store loss value
+for epoch in range(epochs):
+    model.train()
     
-    loss.backward()  # Compute gradients
-    optimizer.step()  # Update weights
+    y_pred = model(x)
+    loss = criterion(y_pred, y)
+    
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
 
-    # Print loss, weight, and bias for EVERY epoch (1 to 50)
-    print(f'epoch: {epoch:2}  loss: {loss.item():10.8f}  '
-          f'weight: {model.linear.weight.item():10.8f}  '
-          f'bias: {model.linear.bias.item():10.8f}')
+    loss_values.append(loss.item())
 
-```
+    if (epoch+1) % 10 == 0:
+        print(f"Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}")
 
+# Step 5 & 6: Visualizations
+model.eval()
+with torch.no_grad():
+    predicted = model(x)
 
-```
-plt.plot(range(epochs), losses)
-plt.ylabel('Loss')
-plt.xlabel('epoch');
+fig, axs = plt.subplots(2, 1, figsize=(10, 8), constrained_layout=True)
+
+# Loss Curve
+axs[0].plot(loss_values, label='Training Loss', color='blue')
+axs[0].set_title('Training Loss vs Iterations')
+axs[0].set_xlabel('Epoch')
+axs[0].set_ylabel('MSE Loss')
+axs[0].legend()
+axs[0].grid(True)
+
+# Best Fit Line
+axs[1].scatter(x.numpy(), y.numpy(), label='Original Data', color='blue')
+axs[1].plot(x.numpy(), predicted.numpy(), label='Best Fit Line', color='red')
+axs[1].set_title('Best Fit Line')
+axs[1].set_xlabel('Input X')
+axs[1].set_ylabel('Target Y')
+axs[1].legend()
+axs[1].grid(True)
+
 plt.show()
 
-```
-
-
-
-```
-# Automatically determine x-range
-x1 = torch.tensor([X.min().item(), X.max().item()])
-
-# Extract model parameters
-w1, b1 = model.linear.weight.item(), model.linear.bias.item()
-
-# Compute y1 (predicted values)
-y1 = x1 * w1 + b1
-
-```
-
+# Step 7: Make Prediction
+new_input = torch.tensor([[55.0]])
+predicted_output = model(new_input).item()
+print("\n" + "="*40)
+print(f"Prediction for input {new_input.item()}: {predicted_output:.2f}")
+print("="*40)
 
 
 ```
-# Print weight, bias, and x/y values
-print(f'Final Weight: {w1:.8f}, Final Bias: {b1:.8f}')
-print(f'X range: {x1.numpy()}')
-print(f'Predicted Y values: {y1.numpy()}')
-```
-
-
-
-```
-# Plot original data and best-fit line
-plt.scatter(X.numpy(), y.numpy(), label="Original Data")
-plt.plot(x1.numpy(), y1.numpy(), 'r', label="Best-Fit Line")
-plt.xlabel('x')
-plt.ylabel('y')
-plt.title('Trained Model: Best-Fit Line')
-plt.legend()
-plt.show()
-```
-
-
-
 
 ### Dataset Information
-<img width="695"  src="https://github.com/user-attachments/assets/6a9d9a07-def0-48fe-a313-b6a2d0940d38" />
-
-### OUTPUT
-##### Training Loss Vs Iteration Plot
-
-<img width="545"  src="https://github.com/user-attachments/assets/024c5b4a-08a0-4875-aa59-7a527cc214c6" />
-
-#### Best Fit line plot
-<img width="696"  src="https://github.com/user-attachments/assets/6cbf87c2-9a34-4854-92be-da887af305e3" />
+![image](https://github.com/user-attachments/assets/2c88aa6b-54e2-46fb-bfcb-81d282d91efd)
 
 
+
+## OUTPUT
+### Training Loss Vs Iteration Plot
+![image](https://github.com/user-attachments/assets/0887eb70-6269-46f2-a10d-6d2d825cfb84)
+
+### Best Fit line plot
+![image](https://github.com/user-attachments/assets/e16d5596-394f-498a-8a5f-54556cfd5e9d)
 
 
 ### New Sample Data Prediction
-
-##### Include your sample input and output here
-<img width="186" alt="Screenshot 2025-03-22 at 11 40 29 AM" src="https://github.com/user-attachments/assets/b84b61c1-b473-4d22-9c04-f8ee33a0ee76" />
+![image](https://github.com/user-attachments/assets/2310b2d6-776a-4d7a-93a4-28d8502a1b86)
 
 
 ## RESULT
